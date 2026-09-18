@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Upload and analyze title usage in a CSV file locally." />
+    <title>CSV Title Usage · Text Helper Hub</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23ff0000'/%3E%3Cpath d='M17 18h30v8H36v23h-8V26H17z' fill='white'/%3E%3C/svg%3E" />
+    <script>
+      (() => {
+        const stored = localStorage.getItem("text-helper-theme");
+        document.documentElement.dataset.theme = stored || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      })();
+    </script>
+    <link rel="stylesheet" href="../../assets/styles.css" />
+    <script src="../../assets/theme.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="../../" aria-label="Text Helper Hub home">
+          <span class="brand-mark" aria-hidden="true">T</span>
+          <span class="brand-label">Text Helper Hub</span>
+        </a>
+        <div class="topbar-actions">
+          <a class="breadcrumb" href="../../">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+            All helpers
+          </a>
+          <button class="theme-toggle" type="button" data-theme-toggle>
+            <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="12" cy="12" r="3.5" />
+              <path d="M12 2v2.2M12 19.8V22M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2 12h2.2M19.8 12H22M4.93 19.07l1.56-1.56M17.51 6.49l1.56-1.56" />
+            </svg>
+            <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="tool-layout">
+        <section class="tool-heading" aria-labelledby="tool-title">
+          <div>
+            <p class="eyebrow">Data helper</p>
+            <h1 id="tool-title">CSV Title Usage</h1>
+            <p>Sort and filter every column, with title frequency calculated automatically.</p>
+          </div>
+          <span class="privacy-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></svg>
+            Stays in your browser
+          </span>
+        </section>
+
+        <section class="upload-panel" aria-label="Upload CSV">
+          <label class="dropzone" id="dropzone" for="csv-file" tabindex="0">
+            <span class="dropzone-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4m0 0L7 9m5-5 5 5" /><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" /></svg>
+            </span>
+            <span>
+              <strong>Drop your CSV here</strong>
+              <span>or click to choose a file. Comma, semicolon, and tab delimiters are supported.</span>
+            </span>
+            <input id="csv-file" type="file" accept=".csv,text/csv,text/plain" hidden />
+          </label>
+          <div class="button-stack">
+            <button class="button button-primary" id="choose-file" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" /></svg>
+              Choose CSV
+            </button>
+            <button class="button button-secondary" id="load-sample" type="button">Load sample</button>
+          </div>
+        </section>
+
+        <p class="status-message" id="status-message" role="status" aria-live="polite">Expected columns include id, title, and summary_bullets.</p>
+
+        <section class="results-panel" aria-label="CSV results">
+          <div class="results-toolbar">
+            <div class="stats" id="stats">
+              <span class="stat-chip"><strong>0</strong> rows</span>
+              <span class="stat-chip"><strong>0</strong> unique titles</span>
+              <span class="stat-chip"><strong>0</strong> shown</span>
+            </div>
+            <button class="clear-filters" id="clear-filters" type="button">Clear filters</button>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table" id="data-table">
+              <thead id="table-head"></thead>
+              <tbody id="table-body">
+                <tr><td class="empty-table">Upload a CSV to see its rows.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pagination" hidden>
+            <button class="button button-secondary" id="previous-page" type="button">Previous</button>
+            <span id="page-label">Page 1 of 1</span>
+            <button class="button button-secondary" id="next-page" type="button">Next</button>
+          </div>
+        </section>
+      </main>
+      <noscript><p class="noscript">Enable JavaScript to analyze CSV files.</p></noscript>
+    </div>
+  </body>
+</html>

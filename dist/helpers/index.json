@@ -1,0 +1,10 @@
+[
+  {
+    "name": "CSV Title Usage",
+    "description": "Upload a CSV, inspect its rows, filter every column, and count repeated titles.",
+    "category": "Data",
+    "icon": "table",
+    "slug": "csv-title-usage",
+    "href": "./helpers/csv-title-usage/"
+  }
+]

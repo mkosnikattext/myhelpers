@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A local hub for small Text team helpers." />
+    <title>Text Helper Hub</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23ff0000'/%3E%3Cpath d='M17 18h30v8H36v23h-8V26H17z' fill='white'/%3E%3C/svg%3E" />
+    <script>
+      (() => {
+        const stored = localStorage.getItem("text-helper-theme");
+        document.documentElement.dataset.theme = stored || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      })();
+    </script>
+    <link rel="stylesheet" href="./assets/styles.css" />
+    <script src="./assets/theme.js" defer></script>
+    <script src="./assets/hub.js" defer></script>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Text Helper Hub home">
+          <span class="brand-mark" aria-hidden="true">T</span>
+          <span class="brand-label">Text Helper Hub</span>
+        </a>
+        <div class="topbar-actions">
+          <button class="theme-toggle" type="button" data-theme-toggle>
+            <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="12" cy="12" r="3.5" />
+              <path d="M12 2v2.2M12 19.8V22M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2 12h2.2M19.8 12H22M4.93 19.07l1.56-1.56M17.51 6.49l1.56-1.56" />
+            </svg>
+            <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="page-intro" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow">Local workspace</p>
+            <h1 id="page-title">Small tools, one place.</h1>
+            <p>Every helper runs on your computer. Open a tool below and get straight to the task.</p>
+          </div>
+          <div class="helper-count" aria-label="Number of available helpers">
+            <strong id="helper-count">1</strong>
+            <span>helper available</span>
+          </div>
+        </section>
+
+        <section id="helpers-grid" class="helpers-grid" aria-label="Available helpers">
+          <div class="empty-hub">Loading helpers…</div>
+        </section>
+      </main>
+      <noscript><p class="noscript">Enable JavaScript to load the helper list.</p></noscript>
+    </div>
+  </body>
+</html>
