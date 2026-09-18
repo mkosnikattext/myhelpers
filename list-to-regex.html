@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>List → Regex</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #17171b;
+      --muted: #696a73;
+      --border: #d7d8df;
+      --accent: #7c3aed;
+      --accent2: #6d28d9;
+      --ok: #15803d;
+      --danger: #b91c1c;
+      --input: #fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121217;
+        --card: #1b1b22;
+        --text: #f4f4f5;
+        --muted: #a1a1aa;
+        --border: #3f3f46;
+        --input: #23232b;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    main {
+      max-width: 920px;
+      margin: 40px auto;
+      padding: 0 18px 48px;
+    }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    .sub { color: var(--muted); margin: 0 0 26px; line-height: 1.5; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.05);
+    }
+    label { display: block; font-weight: 700; margin-bottom: 8px; }
+    textarea, input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--input);
+      color: var(--text);
+      font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      padding: 13px 14px;
+      outline: none;
+    }
+    textarea:focus, input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,58,237,.14); }
+    #values { min-height: 220px; resize: vertical; }
+    #regex { min-height: 125px; resize: vertical; }
+    #listLabel { font-size: 13px; width: auto; margin-bottom: 4px; }
+    .label-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 14px 0 18px;
+    }
+    .check {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      font-weight: 500;
+      margin: 0;
+      color: var(--muted);
+    }
+    button {
+      border: 0;
+      border-radius: 11px;
+      padding: 11px 16px;
+      font-weight: 750;
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+    }
+    button:hover { background: var(--accent2); }
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.secondary:hover { background: rgba(127,127,127,.08); }
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .status { min-height: 20px; color: var(--ok); font-size: 13px; margin-top: 8px; }
+    .hint {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    code {
+      background: rgba(127,127,127,.12);
+      padding: 2px 5px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>List → Regex</h1>
+  <p class="sub">Paste any list of strings separated by new lines, commas, semicolons, spaces, or tabs. The generated regex matches only the values from your list.</p>
+
+  <section class="card">
+    <div class="label-row">
+      <label for="listLabel" style="margin-bottom: 0;">Label for this list:</label>
+      <input id="listLabel" type="text" placeholder="e.g., Organization IDs, User Types, etc." value="Values">
+    </div>
+
+    <label for="values" id="valuesLabel">Values</label>
+    <textarea id="values" placeholder="value1
+value2
+value3"></textarea>
+
+    <div class="row">
+      <label class="check"><input id="exact" type="checkbox" checked> Exact whole-value match</label>
+      <label class="check"><input id="dedupe" type="checkbox" checked> Remove duplicates</label>
+      <button id="generate">Generate regex</button>
+      <button class="secondary" id="clear">Clear</button>
+    </div>
+
+    <label for="regex">Regex pattern</label>
+    <textarea id="regex" readonly placeholder="^(value1|value2|value3)$"></textarea>
+
+    <div class="row" style="margin-bottom:0">
+      <button id="copy">Copy regex</button>
+      <button class="secondary" id="copyPlain">Copy values one per line</button>
+    </div>
+
+    <div class="meta">
+      <span id="count">0 values</span>
+      <span id="length">0 characters</span>
+    </div>
+    <div class="status" id="status"></div>
+
+    <div class="hint">
+      The output uses a standard regex alternation pattern. With <b>Exact whole-value match</b> enabled, it will look like
+      <code>^(value1|value2|value3)$</code>, meaning the entire field must exactly match one of your values.
+      Without it, the pattern is <code>(value1|value2|value3)</code> for substring matching.
+      Regex-special characters inside values are escaped automatically.
+    </div>
+  </section>
+</main>
+
+<script>
+  const valuesEl = document.getElementById('values');
+  const regexEl = document.getElementById('regex');
+  const exactEl = document.getElementById('exact');
+  const dedupeEl = document.getElementById('dedupe');
+  const countEl = document.getElementById('count');
+  const lengthEl = document.getElementById('length');
+  const statusEl = document.getElementById('status');
+  const listLabelEl = document.getElementById('listLabel');
+  const valuesLabelEl = document.getElementById('valuesLabel');
+
+  function parseValues() {
+    let values = valuesEl.value
+      .split(/[\s,;]+/)
+      .map(v => v.trim())
+      .filter(Boolean);
+
+    if (dedupeEl.checked) values = [...new Set(values)];
+    return values;
+  }
+
+  function escapeRegex(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function updateLabel() {
+    const label = listLabelEl.value.trim() || 'Values';
+    valuesLabelEl.textContent = label;
+  }
+
+  function generate() {
+    const values = parseValues();
+    let out = '';
+
+    if (values.length) {
+      const body = values.map(escapeRegex).join('|');
+      out = exactEl.checked ? `^(${body})$` : `(${body})`;
+    }
+
+    regexEl.value = out;
+    countEl.textContent = `${values.length} value${values.length === 1 ? '' : 's'}`;
+    lengthEl.textContent = `${out.length} character${out.length === 1 ? '' : 's'}`;
+    statusEl.textContent = '';
+  }
+
+  async function copyText(text, message) {
+    if (!text) {
+      statusEl.textContent = 'Nothing to copy yet.';
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      statusEl.textContent = message;
+    } catch {
+      const tmp = document.createElement('textarea');
+      tmp.value = text;
+      document.body.appendChild(tmp);
+      tmp.select();
+      document.execCommand('copy');
+      tmp.remove();
+      statusEl.textContent = message;
+    }
+    setTimeout(() => statusEl.textContent = '', 1800);
+  }
+
+  document.getElementById('generate').addEventListener('click', generate);
+  document.getElementById('copy').addEventListener('click', () => copyText(regexEl.value, 'Regex copied.'));
+  document.getElementById('copyPlain').addEventListener('click', () => copyText(parseValues().join('\n'), 'Values copied.'));
+  document.getElementById('clear').addEventListener('click', () => {
+    valuesEl.value = '';
+    generate();
+    valuesEl.focus();
+  });
+
+  listLabelEl.addEventListener('input', updateLabel);
+  valuesEl.addEventListener('input', generate);
+  exactEl.addEventListener('change', generate);
+  dedupeEl.addEventListener('change', generate);
+
+  updateLabel();
+  generate();
+</script>
+</body>
+</html>

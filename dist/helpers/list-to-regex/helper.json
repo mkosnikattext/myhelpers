@@ -1,0 +1,6 @@
+{
+  "name": "List → Regex",
+  "description": "Convert any list of strings into a regex pattern. Handles deduplication and escaping automatically.",
+  "category": "Text",
+  "icon": "braces"
+}
