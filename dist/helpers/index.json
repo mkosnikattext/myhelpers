@@ -6,5 +6,13 @@
     "icon": "table",
     "slug": "csv-title-usage",
     "href": "./helpers/csv-title-usage/"
+  },
+  {
+    "name": "List → Regex",
+    "description": "Convert any list of strings into a regex pattern with automatic escaping and deduplication.",
+    "category": "Text",
+    "icon": "braces",
+    "slug": "list-to-regex",
+    "href": "./helpers/list-to-regex/"
   }
 ]
