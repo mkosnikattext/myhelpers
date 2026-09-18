@@ -1,4 +1,3 @@
-const PAGE_SIZE = 100;
 const USAGE_KEY = "__title_usage";
 
 const state = {
@@ -11,6 +10,8 @@ const state = {
   sortKey: "",
   sortDirection: "asc",
   page: 1,
+  rowsPerPage: 100,
+  groupByTitle: false,
   fileName: "",
 };
 
@@ -22,12 +23,21 @@ const statusMessage = document.querySelector("#status-message");
 const tableHead = document.querySelector("#table-head");
 const tableBody = document.querySelector("#table-body");
 const table = document.querySelector("#data-table");
+const tableColumns = document.querySelector("#table-columns");
 const stats = document.querySelector("#stats");
 const clearFiltersButton = document.querySelector("#clear-filters");
+const groupByTitleInput = document.querySelector("#group-by-title");
+const rowsPerPageSelect = document.querySelector("#rows-per-page");
+const exportGroupedButton = document.querySelector("#export-grouped");
 const pagination = document.querySelector("#pagination");
 const previousPageButton = document.querySelector("#previous-page");
 const nextPageButton = document.querySelector("#next-page");
 const pageLabel = document.querySelector("#page-label");
+const titleReport = document.querySelector("#title-report");
+const titleReportBody = document.querySelector("#title-report-body");
+const reportStats = document.querySelector("#report-stats");
+const reportChartPanel = document.querySelector("#report-chart-panel");
+const reportChart = document.querySelector("#report-chart");
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -165,8 +175,58 @@ function getColumnLabel(key) {
   return key === USAGE_KEY ? "Title usage" : key;
 }
 
-function getFilteredRows() {
-  return state.rows.filter((row) =>
+function collectGroupedValues(rows, key) {
+  const values = [];
+  const seen = new Set();
+
+  rows.forEach((row) => {
+    const sourceValues = key === state.summaryKey ? String(row[key] || "").split("|") : [row[key]];
+    sourceValues.forEach((value) => {
+      const cleanValue = String(value ?? "").trim();
+      const normalizedValue = cleanValue.toLocaleLowerCase();
+      if (cleanValue && !seen.has(normalizedValue)) {
+        seen.add(normalizedValue);
+        values.push(cleanValue);
+      }
+    });
+  });
+
+  return values;
+}
+
+function getGroupedRows(forceGroup = state.groupByTitle) {
+  if (!forceGroup) return state.rows;
+
+  const groups = new Map();
+  state.rows.forEach((row) => {
+    const title = String(row[state.titleKey] || "").trim();
+    const groupKey = title ? title.toLocaleLowerCase() : `__untitled_${row.__row_index}`;
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey).push(row);
+  });
+
+  return [...groups.values()].map((groupRows) => {
+    const groupedRow = {
+      __row_index: groupRows[0].__row_index,
+      __group_size: groupRows.length,
+      __group_values: {},
+    };
+    state.headers.forEach((key) => {
+      if (key === state.titleKey) {
+        groupedRow[key] = groupRows[0][key];
+        return;
+      }
+      const values = collectGroupedValues(groupRows, key);
+      groupedRow.__group_values[key] = values;
+      groupedRow[key] = values.join(key === state.idKey ? ", " : " | ");
+    });
+    groupedRow[USAGE_KEY] = groupRows.length;
+    return groupedRow;
+  });
+}
+
+function getFilteredRows(rows = getGroupedRows()) {
+  return rows.filter((row) =>
     [...state.headers, USAGE_KEY].every((key) => {
       const filter = String(state.filters[key] || "").trim().toLocaleLowerCase();
       if (!filter) return true;
@@ -205,6 +265,80 @@ function getSortedRows(rows) {
   });
 }
 
+function getTitleFrequencyReport() {
+  const titleCounts = new Map();
+
+  state.rows.forEach((row) => {
+    const title = String(row[state.titleKey] || "").trim();
+    const normalizedTitle = title.toLocaleLowerCase();
+    if (!normalizedTitle) return;
+
+    if (!titleCounts.has(normalizedTitle)) {
+      titleCounts.set(normalizedTitle, { title, count: 0 });
+    }
+    titleCounts.get(normalizedTitle).count += 1;
+  });
+
+  return [...titleCounts.values()]
+    .filter((item) => item.count > 1)
+    .sort((first, second) => second.count - first.count || first.title.localeCompare(second.title, undefined, { sensitivity: "base" }));
+}
+
+function renderTitleReport() {
+  if (!state.rows.length) {
+    titleReport.hidden = true;
+    return;
+  }
+
+  const report = getTitleFrequencyReport();
+  const repeatedRows = report.reduce((total, item) => total + item.count, 0);
+  const highestUsage = report.length ? report[0].count : 0;
+
+  titleReport.hidden = false;
+  reportStats.innerHTML = `
+    <span class="stat-chip"><strong>${report.length.toLocaleString()}</strong> repeated titles</span>
+    <span class="stat-chip"><strong>${repeatedRows.toLocaleString()}</strong> matching rows</span>
+    <span class="stat-chip"><strong>${highestUsage.toLocaleString()}</strong> highest usage</span>`;
+
+  if (!report.length) {
+    reportChartPanel.hidden = true;
+    reportChart.innerHTML = "";
+    titleReportBody.innerHTML = '<tr><td class="report-empty" colspan="3">No titles are repeated in this CSV.</td></tr>';
+    return;
+  }
+
+  const chartItems = report.slice(0, 10);
+  reportChartPanel.hidden = false;
+  reportChart.classList.remove("is-visible");
+  reportChart.innerHTML = chartItems
+    .map((item, index) => {
+      const width = highestUsage ? (item.count / highestUsage) * 100 : 0;
+      return `<div class="chart-row" title="${escapeHtml(item.title)}: ${item.count.toLocaleString()} uses">
+        <span class="chart-label">${escapeHtml(item.title)}</span>
+        <span class="chart-track" aria-hidden="true"><span class="chart-bar" style="--bar-width: ${width.toFixed(2)}%; --bar-index: ${index}"></span></span>
+        <span class="chart-value">${item.count.toLocaleString()}</span>
+      </div>`;
+    })
+    .join("");
+
+  const showChart = () => reportChart.classList.add("is-visible");
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => requestAnimationFrame(showChart));
+  } else {
+    showChart();
+  }
+
+  titleReportBody.innerHTML = report
+    .map(
+      (item) => `<tr>
+        <td>${escapeHtml(item.title)}</td>
+        <td><span class="usage-count">${item.count.toLocaleString()}</span></td>
+        <td>${(item.count - 1).toLocaleString()}</td>
+      </tr>`,
+    )
+    .join("");
+}
+
 function renderSummaryCell(value) {
   const bullets = String(value)
     .split("|")
@@ -218,6 +352,17 @@ function renderSummaryCell(value) {
 function renderCell(row, key) {
   const value = row[key];
   if (key === USAGE_KEY) return `<span class="usage-count">${escapeHtml(value)}</span>`;
+  if (state.groupByTitle && row.__group_values && (key === state.idKey || key === state.summaryKey)) {
+    const values = row.__group_values[key] || [];
+    if (!values.length) return "—";
+    const label = key === state.idKey
+      ? `${values.length.toLocaleString()} ID${values.length === 1 ? "" : "s"}`
+      : `${values.length.toLocaleString()} unique bullet${values.length === 1 ? "" : "s"}`;
+    const content = key === state.idKey
+      ? `<div class="folded-id-list">${values.map((item) => `<span class="id-value">${escapeHtml(item)}</span>`).join("")}</div>`
+      : `<ul class="bullet-list">${values.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+    return `<details class="folded-cell"><summary>${label}</summary><div class="folded-content">${content}</div></details>`;
+  }
   if (key === state.idKey) return `<span class="id-value">${escapeHtml(value)}</span>`;
   if (key === state.summaryKey) return renderSummaryCell(value);
   return escapeHtml(value);
@@ -225,6 +370,15 @@ function renderCell(row, key) {
 
 function renderHeader() {
   const keys = [...state.headers, USAGE_KEY];
+  const widths = keys.map((key) => {
+    if (key === USAGE_KEY) return 140;
+    if (key === state.idKey) return 210;
+    if (key === state.titleKey) return 280;
+    if (key === state.summaryKey) return 520;
+    return 240;
+  });
+  tableColumns.innerHTML = widths.map((width) => `<col style="width: ${width}px" />`).join("");
+  table.style.minWidth = `${widths.reduce((total, width) => total + width, 0)}px`;
   tableHead.innerHTML = `
     <tr class="header-row">
       ${keys
@@ -274,10 +428,10 @@ function renderHeader() {
 function renderBody() {
   const filteredRows = getFilteredRows();
   const sortedRows = getSortedRows(filteredRows);
-  const pageCount = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE));
+  const pageCount = state.rowsPerPage === 0 ? 1 : Math.max(1, Math.ceil(sortedRows.length / state.rowsPerPage));
   state.page = Math.min(state.page, pageCount);
-  const start = (state.page - 1) * PAGE_SIZE;
-  const pageRows = sortedRows.slice(start, start + PAGE_SIZE);
+  const start = state.rowsPerPage === 0 ? 0 : (state.page - 1) * state.rowsPerPage;
+  const pageRows = state.rowsPerPage === 0 ? sortedRows : sortedRows.slice(start, start + state.rowsPerPage);
   const keys = [...state.headers, USAGE_KEY];
 
   if (!pageRows.length) {
@@ -298,17 +452,52 @@ function renderBody() {
   stats.innerHTML = `
     <span class="stat-chip"><strong>${state.rows.length.toLocaleString()}</strong> rows</span>
     <span class="stat-chip"><strong>${uniqueTitles.toLocaleString()}</strong> unique titles</span>
-    <span class="stat-chip"><strong>${filteredRows.length.toLocaleString()}</strong> shown</span>`;
+    <span class="stat-chip"><strong>${filteredRows.length.toLocaleString()}</strong> ${state.groupByTitle ? "groups" : "rows"} shown</span>`;
 
-  pagination.hidden = sortedRows.length <= PAGE_SIZE;
+  pagination.hidden = pageCount <= 1;
   pageLabel.textContent = `Page ${state.page} of ${pageCount}`;
   previousPageButton.disabled = state.page <= 1;
   nextPageButton.disabled = state.page >= pageCount;
+  exportGroupedButton.disabled = !state.groupByTitle || !state.rows.length;
+  exportGroupedButton.title = exportGroupedButton.disabled ? "Turn on Group by title to export" : "Download grouped rows as CSV";
+}
+
+function escapeCsvValue(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+function buildGroupedCsv() {
+  const headers = [...state.headers, "title_usage"];
+  const rows = getGroupedRows(true);
+  const lines = [headers.map(escapeCsvValue).join(",")];
+
+  rows.forEach((row) => {
+    const values = [...state.headers.map((key) => row[key]), row[USAGE_KEY]];
+    lines.push(values.map(escapeCsvValue).join(","));
+  });
+
+  return `\uFEFF${lines.join("\r\n")}`;
+}
+
+function downloadGroupedCsv() {
+  if (!state.groupByTitle || !state.rows.length) return;
+  const csv = buildGroupedCsv();
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const baseName = state.fileName.replace(/\.csv$/i, "") || "grouped-titles";
+  link.href = url;
+  link.download = `${baseName}-grouped.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function render() {
   renderHeader();
   renderBody();
+  renderTitleReport();
 }
 
 function loadCsvText(text, fileName = "CSV") {
@@ -398,6 +587,20 @@ clearFiltersButton.addEventListener("click", () => {
   state.filters = {};
   state.page = 1;
   render();
+});
+
+groupByTitleInput.addEventListener("change", () => {
+  state.groupByTitle = groupByTitleInput.checked;
+  state.page = 1;
+  renderBody();
+});
+
+exportGroupedButton.addEventListener("click", downloadGroupedCsv);
+
+rowsPerPageSelect.addEventListener("change", () => {
+  state.rowsPerPage = Number(rowsPerPageSelect.value);
+  state.page = 1;
+  renderBody();
 });
 
 previousPageButton.addEventListener("click", () => {

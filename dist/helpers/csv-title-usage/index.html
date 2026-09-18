@@ -82,10 +82,32 @@
               <span class="stat-chip"><strong>0</strong> unique titles</span>
               <span class="stat-chip"><strong>0</strong> shown</span>
             </div>
-            <button class="clear-filters" id="clear-filters" type="button">Clear filters</button>
+            <div class="table-options">
+              <label class="group-toggle">
+                <input id="group-by-title" type="checkbox" />
+                <span class="toggle-track" aria-hidden="true"></span>
+                <span>Group by title</span>
+              </label>
+              <label class="rows-control" for="rows-per-page">
+                <span>Rows per page</span>
+                <select id="rows-per-page">
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100" selected>100</option>
+                  <option value="250">250</option>
+                  <option value="0">All</option>
+                </select>
+              </label>
+              <button class="button button-secondary export-button" id="export-grouped" type="button" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5" /><path d="M5 19h14" /></svg>
+                Export grouped CSV
+              </button>
+              <button class="clear-filters" id="clear-filters" type="button">Clear filters</button>
+            </div>
           </div>
           <div class="table-scroll">
             <table class="data-table" id="data-table">
+              <colgroup id="table-columns"></colgroup>
               <thead id="table-head"></thead>
               <tbody id="table-body">
                 <tr><td class="empty-table">Upload a CSV to see its rows.</td></tr>
@@ -96,6 +118,33 @@
             <button class="button button-secondary" id="previous-page" type="button">Previous</button>
             <span id="page-label">Page 1 of 1</span>
             <button class="button button-secondary" id="next-page" type="button">Next</button>
+          </div>
+        </section>
+
+        <section class="title-report" id="title-report" aria-labelledby="title-report-heading" hidden>
+          <div class="title-report-header">
+            <div>
+              <p class="eyebrow">Report</p>
+              <h2 id="title-report-heading">Repeated title usage</h2>
+              <p>Titles used more than once, calculated from the full uploaded CSV.</p>
+            </div>
+            <div class="report-stats" id="report-stats"></div>
+          </div>
+          <div class="report-chart-panel" id="report-chart-panel">
+            <h3>Most used repeated titles</h3>
+            <div class="report-chart" id="report-chart" role="img" aria-label="Bar chart of the ten most-used repeated titles"></div>
+          </div>
+          <div class="report-table-scroll">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th scope="col">Title</th>
+                  <th scope="col">Total uses</th>
+                  <th scope="col">Repeats after first</th>
+                </tr>
+              </thead>
+              <tbody id="title-report-body"></tbody>
+            </table>
           </div>
         </section>
       </main>

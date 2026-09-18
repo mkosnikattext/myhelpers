@@ -27,3 +27,13 @@ Use this manifest shape:
 ```
 
 If you open `dist/index.html` directly instead of using `npm start`, the hub uses `dist/helpers/index.json` as a fallback list.
+
+## Publish with GitHub Pages
+
+1. Upload the complete contents of this folder to the repository. Keep `index.html`, `.nojekyll`, and the `dist` folder at the repository root.
+2. On GitHub, open **Settings → Pages**.
+3. Under **Build and deployment**, choose **Deploy from a branch**.
+4. Select the `main` branch and the `/(root)` folder, then click **Save**.
+5. Open the site URL shown by GitHub after the deployment finishes.
+
+Do not select `/docs`: this package publishes from the repository root and redirects into the static app in `dist`.
