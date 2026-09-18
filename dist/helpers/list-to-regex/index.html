@@ -217,7 +217,7 @@ value3"></textarea>
 
       function parseValues() {
         let values = valuesEl.value
-          .split(/[\s,;]+/)
+          .split(/\r?\n/)
           .map(v => v.trim())
           .filter(Boolean);
 

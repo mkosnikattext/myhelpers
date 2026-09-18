@@ -1039,7 +1039,7 @@ h1 {
   width: var(--bar-width);
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--purple), var(--accent));
+  background: var(--accent);
   transform: scaleX(1);
   transform-origin: left;
   transition: none;
