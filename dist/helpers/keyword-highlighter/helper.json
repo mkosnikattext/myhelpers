@@ -1,0 +1,6 @@
+{
+  "name": "Keyword Highlighter",
+  "description": "Search text and highlight matching keywords with automatic case-insensitive matching.",
+  "category": "Text",
+  "icon": "highlighter"
+}

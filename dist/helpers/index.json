@@ -16,6 +16,14 @@
     "href": "./helpers/list-to-regex/"
   },
   {
+    "name": "Keyword Highlighter",
+    "description": "Search text and highlight matching keywords with automatic case-insensitive matching.",
+    "category": "Text",
+    "icon": "highlighter",
+    "slug": "keyword-highlighter",
+    "href": "./helpers/keyword-highlighter/"
+  },
+  {
     "name": "Workflow Editor",
     "description": "Visual canvas editor for workflow manifests with drag-and-drop block rewiring.",
     "category": "Developer",

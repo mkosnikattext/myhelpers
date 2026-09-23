@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Search text and highlight matching keywords with automatic case-insensitive matching." />
+    <title>Keyword Highlighter · Text Helper Hub</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23ff0000'/%3E%3Cpath d='M17 18h30v8H36v23h-8V26H17z' fill='white'/%3E%3C/svg%3E" />
+    <script>
+      (() => {
+        const stored = localStorage.getItem("text-helper-theme");
+        document.documentElement.dataset.theme = stored || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      })();
+    </script>
+    <link rel="stylesheet" href="../../assets/styles.css" />
+    <script src="../../assets/theme.js" defer></script>
+    <style>
+      .field-wrapper {
+        display: grid;
+        gap: 8px;
+      }
+
+      .field-wrapper label {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .field-wrapper textarea,
+      .field-wrapper input {
+        display: block;
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--text);
+        font-family: ui-monospace, "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.5;
+        transition: border-color 150ms ease, box-shadow 150ms ease;
+      }
+
+      .field-wrapper textarea:focus,
+      .field-wrapper input:focus {
+        border-color: var(--text);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 8%, transparent);
+      }
+
+      .field-wrapper textarea {
+        min-height: 160px;
+        resize: vertical;
+      }
+
+      .field-wrapper input {
+        min-height: 40px;
+      }
+
+      .input-panel {
+        display: grid;
+        gap: 22px;
+      }
+
+      .controls-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .result-section {
+        margin-top: 22px;
+      }
+
+      .result-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 8px;
+        display: block;
+      }
+
+      #result {
+        padding: 16px;
+        min-height: 100px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        white-space: pre-wrap;
+        line-height: 1.6;
+        color: var(--text);
+        font-family: ui-monospace, "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+      }
+
+      mark {
+        background: var(--yellow);
+        color: #000;
+        padding: 2px 3px;
+        border-radius: 3px;
+      }
+
+      .status-message {
+        margin-top: 12px;
+        font-size: 13px;
+        color: var(--text-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="../../" aria-label="Text Helper Hub home">
+          <span class="brand-mark" aria-hidden="true">T</span>
+          <span class="brand-label">Text Helper Hub</span>
+        </a>
+        <div class="topbar-actions">
+          <a class="breadcrumb" href="../../">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+            All helpers
+          </a>
+          <button class="theme-toggle" type="button" data-theme-toggle>
+            <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="12" cy="12" r="3.5" />
+              <path d="M12 2v2.2M12 19.8V22M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2 12h2.2M19.8 12H22M4.93 19.07l1.56-1.56M17.51 6.49l1.56-1.56" />
+            </svg>
+            <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <main class="tool-layout">
+        <section class="tool-heading" aria-labelledby="tool-title">
+          <div>
+            <p class="eyebrow">Text helper</p>
+            <h1 id="tool-title">Keyword Highlighter</h1>
+            <p>Search text and highlight matching keywords with automatic case-insensitive matching.</p>
+          </div>
+          <span class="privacy-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="m9 12 2 2 4-4" /></svg>
+            Stays in your browser
+          </span>
+        </section>
+
+        <section class="input-panel" aria-label="Keyword highlighter">
+          <div class="field-wrapper">
+            <label for="keywords">Keywords</label>
+            <input id="keywords" type="text" placeholder="Example: apple, payment, urgent" />
+          </div>
+
+          <div class="field-wrapper">
+            <label for="message">Message</label>
+            <textarea id="message" placeholder="Enter your message here..."></textarea>
+          </div>
+
+          <div class="controls-row">
+            <button class="button button-primary" id="highlightBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h3.28a1 1 0 0 1 .948.684l1.498 4.493a1 1 0 0 1-.502 1.21l-2.257 1.13a11.042 11.042 0 0 0 5.516 5.516l1.13-2.257a1 1 0 0 1 1.21-.502l4.493 1.498a1 1 0 0 1 .684.949V19a2 2 0 0 1-2 2h-1C9.716 21 3 14.284 3 6V5Z" /></svg>
+              Highlight Keywords
+            </button>
+          </div>
+
+          <div class="result-section">
+            <label class="result-label">Result</label>
+            <div id="result"></div>
+            <p class="status-message" id="status" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+      </main>
+      <noscript><p class="noscript">Enable JavaScript to highlight keywords.</p></noscript>
+    </div>
+
+    <script>
+      function escapeHtml(text) {
+        return text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function escapeRegex(text) {
+        return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+
+      function highlightKeywords() {
+        const keywordInput = document.getElementById("keywords").value;
+        const message = document.getElementById("message").value;
+        const result = document.getElementById("result");
+        const status = document.getElementById("status");
+
+        const keywords = keywordInput
+          .split(",")
+          .map(keyword => keyword.trim())
+          .filter(Boolean);
+
+        if (!message) {
+          result.innerHTML = "";
+          status.textContent = "";
+          return;
+        }
+
+        if (keywords.length === 0) {
+          result.textContent = message;
+          status.textContent = "No keywords to highlight.";
+          return;
+        }
+
+        let highlighted = escapeHtml(message);
+        keywords.sort((a, b) => b.length - a.length);
+
+        const pattern = keywords
+          .map(keyword => escapeRegex(escapeHtml(keyword)))
+          .join("|");
+
+        const regex = new RegExp(`(${pattern})`, "gi");
+        highlighted = highlighted.replace(regex, "<mark>$1</mark>");
+
+        result.innerHTML = highlighted;
+        status.textContent = `Highlighted ${keywords.length} keyword${keywords.length !== 1 ? "s" : ""}.`;
+      }
+
+      document.getElementById("highlightBtn").addEventListener("click", highlightKeywords);
+      document.getElementById("keywords").addEventListener("input", highlightKeywords);
+      document.getElementById("message").addEventListener("input", highlightKeywords);
+    </script>
+  </body>
+</html>
