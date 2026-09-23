@@ -122,6 +122,77 @@
       white-space: nowrap;
     }
 
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      font-size: 13px;
+      color: var(--text);
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background-color 150ms ease;
+    }
+
+    .breadcrumb:hover {
+      background: var(--surface-soft);
+    }
+
+    .breadcrumb svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--editor-line);
+      background: var(--editor-card);
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--editor-text);
+      padding: 0;
+      transition: background-color 150ms ease;
+    }
+
+    .theme-toggle:hover {
+      background: var(--surface-soft);
+    }
+
+    .theme-toggle svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 1.8;
+      display: block;
+    }
+
+    .theme-toggle .sun {
+      display: block;
+    }
+
+    .theme-toggle .moon {
+      display: none;
+    }
+
+    html[data-theme="dark"] .theme-toggle .sun {
+      display: none;
+    }
+
+    html[data-theme="dark"] .theme-toggle .moon {
+      display: block;
+    }
+
     .workspace {
       position: relative;
       min-height: 0;
@@ -661,6 +732,21 @@
     <button class="btn" id="jsonBtn">Manifest JSON</button>
     <button class="btn purple" id="downloadBtn">Download updated manifest</button>
     <div class="status" id="status">Upload a manifest to begin</div>
+    <div class="topbar-actions">
+      <a class="breadcrumb" href="../../" aria-label="Back to Text Helper Hub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+        All helpers
+      </a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle dark mode">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="3.5" />
+          <path d="M12 2v2.2M12 19.8V22M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2 12h2.2M19.8 12H22M4.93 19.07l1.56-1.56M17.51 6.49l1.56-1.56" />
+        </svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />
+        </svg>
+      </button>
+    </div>
   </div>
   <div class="workspace">
     <div class="canvasViewport" id="viewport">
