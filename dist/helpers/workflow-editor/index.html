@@ -32,39 +32,59 @@
     .app {
       height: 100vh;
       display: grid;
-      grid-template-rows: 58px 1fr;
+      grid-template-rows: auto auto 1fr;
       background: var(--editor-bg);
     }
 
     .topbar {
+      padding: 0;
+    }
+
+    .topbar-inner {
+      width: min(1480px, 100%);
+      margin: 0 auto;
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tools-bar {
       display: flex;
       align-items: center;
       gap: 9px;
-      padding: 9px 12px;
-      background: var(--editor-card);
-      border-bottom: 1px solid var(--editor-line);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       z-index: 30;
       flex-wrap: wrap;
     }
 
-    .brand {
-      font-weight: 750;
-      margin-right: 5px;
-      white-space: nowrap;
-      color: var(--editor-text);
+    .tools-bar-inner {
+      width: min(1480px, 100%);
+      margin: 0 auto;
+      padding: 9px 28px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-wrap: wrap;
     }
 
-    .brand span {
-      color: var(--editor-accent);
+    @media (max-width: 760px) {
+      .topbar-inner {
+        padding: 0 16px;
+      }
+      .tools-bar-inner {
+        padding: 9px 16px;
+      }
     }
 
     .btn {
-      border: 1px solid var(--editor-line);
-      background: var(--editor-card);
+      border: 1px solid var(--border);
+      background: var(--surface);
       padding: 8px 11px;
       border-radius: 8px;
       cursor: pointer;
-      color: var(--editor-text);
+      color: var(--text);
       font-weight: 600;
       transition: background-color 150ms ease;
     }
@@ -74,13 +94,13 @@
     }
 
     .btn.primary {
-      background: var(--editor-dark);
+      background: var(--text);
       color: #fff;
-      border-color: var(--editor-dark);
+      border-color: var(--text);
     }
 
     .btn.primary:hover {
-      background: color-mix(in srgb, var(--editor-dark) 84%, transparent);
+      background: color-mix(in srgb, var(--text) 84%, transparent);
     }
 
     .btn.purple {
@@ -101,10 +121,6 @@
       outline-offset: 2px;
     }
 
-    .filebtn input {
-      display: none;
-    }
-
     .sep {
       width: 1px;
       height: 27px;
@@ -122,76 +138,10 @@
       white-space: nowrap;
     }
 
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-left: auto;
-    }
-
-    .breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 10px;
-      font-size: 13px;
-      color: var(--text);
-      text-decoration: none;
-      border-radius: 6px;
-      transition: background-color 150ms ease;
-    }
-
-    .breadcrumb:hover {
-      background: var(--surface-soft);
-    }
-
-    .breadcrumb svg {
-      width: 16px;
-      height: 16px;
-      stroke-width: 2;
-    }
-
-    .theme-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 34px;
-      height: 34px;
-      border: 1px solid var(--editor-line);
-      background: var(--editor-card);
-      border-radius: 8px;
-      cursor: pointer;
-      color: var(--editor-text);
-      padding: 0;
-      transition: background-color 150ms ease;
-    }
-
-    .theme-toggle:hover {
-      background: var(--surface-soft);
-    }
-
-    .theme-toggle svg {
-      width: 18px;
-      height: 18px;
-      stroke-width: 1.8;
-      display: block;
-    }
-
-    .theme-toggle .sun {
-      display: block;
-    }
-
-    .theme-toggle .moon {
+    .filebtn input {
       display: none;
     }
 
-    html[data-theme="dark"] .theme-toggle .sun {
-      display: none;
-    }
-
-    html[data-theme="dark"] .theme-toggle .moon {
-      display: block;
-    }
 
     .workspace {
       position: relative;
@@ -202,7 +152,7 @@
       position: absolute;
       inset: 0;
       overflow: hidden;
-      background: var(--editor-bg);
+      background: var(--bg);
       cursor: grab;
     }
 
@@ -219,6 +169,7 @@
       transform-origin: 0 0;
       background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 16%, transparent) 1px, transparent 1px);
       background-size: 24px 24px;
+      background-color: var(--bg);
     }
 
     .edgeLayer {
@@ -707,9 +658,6 @@
       .status {
         display: none;
       }
-      .brand {
-        display: none;
-      }
       .sidePanel {
         width: 300px;
       }
@@ -722,30 +670,39 @@
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <div class="brand">Workflow <span>Canvas</span></div>
-    <label class="btn filebtn">Upload manifest<input id="fileInput" type="file" accept=".json,application/json"></label>
-    <button class="btn" id="autoLayoutBtn">Auto layout</button>
-    <button class="btn" id="fitBtn">Fit view</button>
-    <div class="sep"></div>
-    <button class="btn" id="undoBtn">Undo</button>
-    <button class="btn" id="jsonBtn">Manifest JSON</button>
-    <button class="btn purple" id="downloadBtn">Download updated manifest</button>
-    <div class="status" id="status">Upload a manifest to begin</div>
-    <div class="topbar-actions">
-      <a class="breadcrumb" href="../../" aria-label="Back to Text Helper Hub">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
-        All helpers
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="../../" aria-label="Text Helper Hub home">
+        <span class="brand-mark" aria-hidden="true">T</span>
+        <span class="brand-label">Text Helper Hub</span>
       </a>
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle dark mode">
-        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <circle cx="12" cy="12" r="3.5" />
-          <path d="M12 2v2.2M12 19.8V22M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2 12h2.2M19.8 12H22M4.93 19.07l1.56-1.56M17.51 6.49l1.56-1.56" />
-        </svg>
-        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-          <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />
-        </svg>
-      </button>
+      <div class="topbar-actions">
+        <a class="breadcrumb" href="../../">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+          All helpers
+        </a>
+        <button class="theme-toggle" type="button" data-theme-toggle>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.5" />
+            <path d="M12 2v2.2M12 19.8V22M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2 12h2.2M19.8 12H22M4.93 19.07l1.56-1.56M17.51 6.49l1.56-1.56" />
+          </svg>
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2Z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="tools-bar">
+    <div class="tools-bar-inner">
+      <label class="btn filebtn">Upload manifest<input id="fileInput" type="file" accept=".json,application/json"></label>
+      <button class="btn" id="autoLayoutBtn">Auto layout</button>
+      <button class="btn" id="fitBtn">Fit view</button>
+      <div class="sep"></div>
+      <button class="btn" id="undoBtn">Undo</button>
+      <button class="btn" id="jsonBtn">Manifest JSON</button>
+      <button class="btn purple" id="downloadBtn">Download updated manifest</button>
+      <div class="status" id="status">Upload a manifest to begin</div>
     </div>
   </div>
   <div class="workspace">
