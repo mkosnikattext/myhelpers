@@ -46,13 +46,16 @@ function renderHelpers(helpers) {
 }
 
 async function loadHelpers() {
+  const basePath = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname.split('/').slice(0, -1).join('/') + '/';
+
   try {
     const response = await fetch("/api/helpers");
     if (!response.ok) throw new Error("API unavailable");
     renderHelpers(await response.json());
   } catch {
     try {
-      const response = await fetch("./helpers/index.json");
+      const jsonPath = new URL("helpers/index.json", window.location.origin + basePath).href;
+      const response = await fetch(jsonPath);
       if (!response.ok) throw new Error("Fallback unavailable");
       renderHelpers(await response.json());
     } catch {
