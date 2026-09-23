@@ -66,6 +66,24 @@ async function loadHelpers() {
           category: "Data",
           href: "./helpers/csv-title-usage/",
         },
+        {
+          name: "List → Regex",
+          description: "Convert any list of strings into a regex pattern with automatic escaping and deduplication.",
+          category: "Text",
+          href: "./helpers/list-to-regex/",
+        },
+        {
+          name: "Keyword Highlighter",
+          description: "Search text and highlight matching keywords with automatic case-insensitive matching.",
+          category: "Text",
+          href: "./helpers/keyword-highlighter/",
+        },
+        {
+          name: "Workflow Editor",
+          description: "Visual canvas editor for workflow manifests with drag-and-drop block rewiring.",
+          category: "Developer",
+          href: "./helpers/workflow-editor/",
+        },
       ]);
     }
   }
