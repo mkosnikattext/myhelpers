@@ -1,0 +1,6 @@
+{
+  "name": "Workflow Editor",
+  "description": "Visual canvas editor for workflow manifests with drag-and-drop block rewiring.",
+  "category": "Developer",
+  "icon": "square"
+}

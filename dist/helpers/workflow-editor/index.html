@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Visual editor for workflow manifests with drag-and-drop canvas." />
+  <title>Workflow Editor · Text Helper Hub</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23ff0000'/%3E%3Cpath d='M17 18h30v8H36v23h-8V26H17z' fill='white'/%3E%3C/svg%3E" />
+  <script>
+    (() => {
+      const stored = localStorage.getItem("text-helper-theme");
+      document.documentElement.dataset.theme = stored || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="../../assets/styles.css" />
+  <script src="../../assets/theme.js" defer></script>
+  <style>
+    :root {
+      --editor-bg: var(--bg);
+      --editor-card: var(--surface);
+      --editor-text: var(--text);
+      --editor-muted: var(--text-muted);
+      --editor-line: var(--border);
+      --editor-accent: var(--accent);
+      --editor-dark: var(--text);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 58px 1fr;
+      background: var(--editor-bg);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 12px;
+      background: var(--editor-card);
+      border-bottom: 1px solid var(--editor-line);
+      z-index: 30;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      font-weight: 750;
+      margin-right: 5px;
+      white-space: nowrap;
+      color: var(--editor-text);
+    }
+
+    .brand span {
+      color: var(--editor-accent);
+    }
+
+    .btn {
+      border: 1px solid var(--editor-line);
+      background: var(--editor-card);
+      padding: 8px 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--editor-text);
+      font-weight: 600;
+      transition: background-color 150ms ease;
+    }
+
+    .btn:hover {
+      background: var(--surface-soft);
+    }
+
+    .btn.primary {
+      background: var(--editor-dark);
+      color: #fff;
+      border-color: var(--editor-dark);
+    }
+
+    .btn.primary:hover {
+      background: color-mix(in srgb, var(--editor-dark) 84%, transparent);
+    }
+
+    .btn.purple {
+      background: var(--purple);
+      color: #fff;
+      border-color: var(--purple);
+    }
+
+    .btn.purple:hover {
+      background: color-mix(in srgb, var(--purple) 84%, transparent);
+    }
+
+    .btn:focus-visible,
+    .zoomBtn:focus-visible,
+    .close:focus-visible,
+    .tab:focus-visible {
+      outline: 2px solid var(--purple);
+      outline-offset: 2px;
+    }
+
+    .filebtn input {
+      display: none;
+    }
+
+    .sep {
+      width: 1px;
+      height: 27px;
+      background: var(--border);
+      margin: 0 3px;
+    }
+
+    .status {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--text-muted);
+      max-width: 420px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      position: relative;
+      min-height: 0;
+    }
+
+    .canvasViewport {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: var(--editor-bg);
+      cursor: grab;
+    }
+
+    .canvasViewport.panning {
+      cursor: grabbing;
+    }
+
+    .canvasWorld {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 6000px;
+      height: 6000px;
+      transform-origin: 0 0;
+      background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 16%, transparent) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .edgeLayer {
+      position: absolute;
+      inset: 0;
+      width: 6000px;
+      height: 6000px;
+      overflow: visible;
+    }
+
+    .edge {
+      fill: none;
+      stroke: var(--border-strong);
+      stroke-width: 2;
+      pointer-events: stroke;
+    }
+
+    .edge:hover {
+      stroke: var(--text);
+      stroke-width: 3;
+    }
+
+    .edge.temp {
+      stroke: var(--purple);
+      stroke-width: 2.5;
+      stroke-dasharray: 7 5;
+      pointer-events: none;
+    }
+
+    .edgeLabelBg {
+      fill: var(--text);
+      pointer-events: none;
+    }
+
+    .edgeLabel {
+      fill: var(--bg);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      pointer-events: none;
+    }
+
+    .node {
+      position: absolute;
+      width: 220px;
+      min-height: 58px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      gap: 9px;
+      cursor: grab;
+      user-select: none;
+      z-index: 3;
+    }
+
+    .node.dragging {
+      cursor: grabbing;
+      box-shadow: 0 12px 32px color-mix(in srgb, var(--text) 22%, transparent);
+      z-index: 10;
+    }
+
+    .node.dragging-subtree {
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--purple) 14%, transparent);
+      outline: 1px solid color-mix(in srgb, var(--purple) 22%, transparent);
+      outline-offset: 2px;
+    }
+
+    .node.selected {
+      outline: 2px solid var(--purple);
+      outline-offset: 1px;
+    }
+
+    .node.connectTarget {
+      outline: 3px solid color-mix(in srgb, var(--success) 45%, transparent);
+      outline-offset: 3px;
+    }
+
+    .node.switch {
+      width: 225px;
+    }
+
+    .icon {
+      width: 41px;
+      height: 41px;
+      border-radius: 10px;
+      flex: 0 0 41px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .icon.orange {
+      background: var(--purple);
+    }
+
+    .icon.purple {
+      background: linear-gradient(135deg, #a24dff, #7a2eff);
+    }
+
+    .icon.gray {
+      background: var(--text-muted);
+    }
+
+    .nodeText {
+      min-width: 0;
+    }
+
+    .nodeTitle {
+      font-size: 13px;
+      font-weight: 760;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text);
+    }
+
+    .nodeSub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nodeNum {
+      font-weight: 800;
+      margin-right: 3px;
+    }
+
+    .port {
+      position: absolute;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--border-strong);
+      z-index: 7;
+      cursor: crosshair;
+      transition: 0.12s transform, 0.12s opacity, 0.12s border-color, 0.12s background;
+      opacity: 0.25;
+    }
+
+    .node:hover .port,
+    .connecting .port {
+      opacity: 1;
+    }
+
+    .port:hover {
+      transform: translate(-50%) scale(1.25);
+      border-color: var(--purple);
+    }
+
+    .port.in {
+      left: 50%;
+      top: -8px;
+      transform: translateX(-50%);
+    }
+
+    .port.out {
+      left: 50%;
+      bottom: -8px;
+      transform: translateX(-50%);
+    }
+
+    .port.out:hover {
+      transform: translateX(-50%) scale(1.25);
+    }
+
+    .branchPort {
+      position: absolute;
+      bottom: -9px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--purple);
+      cursor: crosshair;
+      z-index: 8;
+      opacity: 0.35;
+    }
+
+    .node:hover .branchPort,
+    .connecting .branchPort {
+      opacity: 1;
+    }
+
+    .branchPort.true {
+      left: 18%;
+      transform: translateX(-50%);
+    }
+
+    .branchPort.next {
+      left: 50%;
+      transform: translateX(-50%);
+      border-color: var(--text);
+    }
+
+    .branchPort.false {
+      left: 82%;
+      transform: translateX(-50%);
+    }
+
+    .branchPort:hover {
+      background: var(--surface-soft);
+      transform: translateX(-50%) scale(1.28);
+    }
+
+    .branchMini {
+      position: absolute;
+      top: 62px;
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--text-muted);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .node:hover .branchMini,
+    .connecting .branchMini {
+      opacity: 1;
+    }
+
+    .branchMini.true {
+      left: 18%;
+      transform: translateX(-50%);
+    }
+
+    .branchMini.next {
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--text);
+    }
+
+    .branchMini.false {
+      left: 82%;
+      transform: translateX(-50%);
+    }
+
+    .sidePanel {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      width: 340px;
+      max-height: calc(100% - 28px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      z-index: 25;
+      display: none;
+      overflow: hidden;
+    }
+
+    .sidePanel.open {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .sideHead {
+      padding: 12px 13px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sideHead b {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .close {
+      border: 0;
+      background: transparent;
+      font-size: 19px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      flex: 1;
+      border: 0;
+      background: var(--surface);
+      padding: 9px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 150ms ease;
+    }
+
+    .tab.active {
+      color: var(--purple);
+      font-weight: 700;
+      border-bottom: 2px solid var(--purple);
+    }
+
+    .panel {
+      display: none;
+      overflow: auto;
+      min-height: 0;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .props {
+      padding: 12px;
+    }
+
+    .field {
+      margin-bottom: 11px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 8px;
+      font-size: 12px;
+      outline: none;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--purple) 14%, transparent);
+    }
+
+    .field textarea {
+      min-height: 115px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      resize: vertical;
+    }
+
+    .jsonEditor {
+      width: 100%;
+      height: 480px;
+      border: 0;
+      padding: 12px;
+      font: 11px / 1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      outline: none;
+      resize: none;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .controls {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      display: flex;
+      gap: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      box-shadow: var(--shadow);
+      padding: 4px;
+      z-index: 20;
+    }
+
+    .zoomBtn {
+      width: 31px;
+      height: 31px;
+      border: 0;
+      background: var(--surface);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text);
+      transition: background-color 150ms ease;
+    }
+
+    .zoomBtn:hover {
+      background: var(--surface-soft);
+    }
+
+    .zoomReadout {
+      font-size: 11px;
+      display: grid;
+      place-items: center;
+      min-width: 46px;
+      color: var(--text-muted);
+    }
+
+    .legend {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 9px 11px;
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 20;
+      box-shadow: var(--shadow);
+      line-height: 1.55;
+    }
+
+    .legend b {
+      color: var(--text);
+    }
+
+    .legend .dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      border: 2px solid var(--purple);
+      vertical-align: -1px;
+      margin: 0 2px;
+    }
+
+    .empty {
+      position: absolute;
+      left: 50%;
+      top: 45%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .empty b {
+      display: block;
+      color: var(--text);
+      margin-bottom: 7px;
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      z-index: 40;
+      background: var(--text);
+      color: var(--bg);
+      padding: 9px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+      box-shadow: var(--shadow);
+      display: none;
+    }
+
+    .copyActions {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .copyActions .btn {
+      font-size: 12px;
+    }
+
+    @media (max-width: 850px) {
+      .status {
+        display: none;
+      }
+      .brand {
+        display: none;
+      }
+      .sidePanel {
+        width: 300px;
+      }
+      .btn {
+        padding: 7px 8px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">Workflow <span>Canvas</span></div>
+    <label class="btn filebtn">Upload manifest<input id="fileInput" type="file" accept=".json,application/json"></label>
+    <button class="btn" id="autoLayoutBtn">Auto layout</button>
+    <button class="btn" id="fitBtn">Fit view</button>
+    <div class="sep"></div>
+    <button class="btn" id="undoBtn">Undo</button>
+    <button class="btn" id="jsonBtn">Manifest JSON</button>
+    <button class="btn purple" id="downloadBtn">Download updated manifest</button>
+    <div class="status" id="status">Upload a manifest to begin</div>
+  </div>
+  <div class="workspace">
+    <div class="canvasViewport" id="viewport">
+      <div class="canvasWorld" id="world">
+        <svg class="edgeLayer" id="edges"></svg>
+        <div id="nodes"></div>
+      </div>
+      <div class="empty" id="empty"><b>Upload your workflow manifest</b>Drag blocks to position them, or drag connector dots to rewire the workflow.</div>
+    </div>
+    <div class="legend"><b>Move blocks:</b> drag a card · nested children move with their parent<br><b>Copy:</b> select a card, then copy the block or its branch in the panel<br><b>Rewire:</b> drag an output handle onto another card's top input · conditions have TRUE, AFTER and FALSE outputs<br><b>Canvas:</b> wheel to zoom · drag empty space to pan</div>
+    <div class="controls"><button class="zoomBtn" id="zoomOut">−</button><div class="zoomReadout" id="zoomReadout">100%</div><button class="zoomBtn" id="zoomIn">+</button></div>
+    <div class="sidePanel" id="sidePanel">
+      <div class="sideHead"><b id="panelTitle">Block</b><button class="close" id="closePanel">×</button></div>
+      <div class="tabs"><button class="tab active" data-tab="props">Block</button><button class="tab" data-tab="json">Manifest JSON</button></div>
+      <div class="panel active" id="propsPanel"><div class="props" id="props"></div></div>
+      <div class="panel" id="jsonPanel"><textarea class="jsonEditor" id="jsonEditor" spellcheck="false"></textarea><div style="padding:9px"><button class="btn primary" id="applyJson">Apply JSON edits</button></div></div>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+<script src="./app.js" defer></script>
+</body>
+</html>
